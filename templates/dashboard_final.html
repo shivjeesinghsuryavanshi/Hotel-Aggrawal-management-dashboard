@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Hotel Management System{% endblock %}
+
+{% block content %}
+<!-- FORCE CACHE REFRESH: 2025-07-05-FINAL -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h2>🏨 Hotel Management Dashboard</h2>
+        <p class="welcome-message">Welcome back! Here's your hotel status overview.</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">🏨</div>
+            <div class="stat-info">
+                <h3>{{ stats.total_rooms }}</h3>
+                <p>Total Rooms</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <h3>{{ stats.checked_in_today }}</h3>
+                <p>Checked In Today</p>
+            </div>
+        </div>
+        <div class="stat-card available">
+            <div class="stat-icon">🔓</div>
+            <div class="stat-info">
+                <h3>{{ stats.available_today }}</h3>
+                <p>Available Rooms</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h3>🚀 Quick Actions</h3>
+        <div class="action-buttons">
+            <a href="{{ url_for('checkin') }}" class="btn btn-primary">
+                ➕ New Check-In
+            </a>
+            <a href="{{ url_for('calendar_view') }}" class="btn btn-secondary">
+                📅 View Calendar
+            </a>
+            <a href="{{ url_for('export_excel') }}" class="btn btn-success">
+                📊 Export Excel Report
+            </a>
+            <a href="{{ url_for('search_tourists_route') }}" class="btn btn-info">
+                🔍 Search & Filter
+            </a>
+            {% if session.latest_receipt %}
+            <a href="{{ url_for('download_receipt') }}" class="btn btn-info">
+                📄 Download Latest Receipt
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Check-ins Table -->
+    <div class="recent-checkins">
+        <h3>📋 Recent Check-ins</h3>
+        {% if stats.recent_checkins %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Guest Name</th>
+                        <th>Mobile</th>
+                        <th>Aadhar</th>
+                        <th>Amount Paid</th>
+                        <th>Remaining</th>
+                        <th>Check-In Status</th>
+                        <th>Room No.</th>
+                        <th>Date</th>
+                        <th>Receipt</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for checkin in stats.recent_checkins %}
+                    <tr>
+                        <td>{{ checkin[0] }}</td>
+                        <td>{{ checkin[1] }}</td>
+                        <td>{{ checkin[2] }}</td>
+                        <td>₹{{ "%.2f"|format(checkin[3]) }}</td>
+                        <td>₹{{ "%.2f"|format(checkin[4]) }}</td>
+                        <td>
+                            <span class="status-badge {{ 'completed' if checkin[5] == 1 else 'pending' }}">
+                                {{ 'Completed' if checkin[5] == 1 else 'Pending' }}
+                            </span>
+                        </td>
+                        <td class="room-number">{{ checkin[6] }}</td>
+                        <td>{{ checkin[7] }}</td>
+                        <td>
+                            <span class="receipt-status {{ 'issued' if checkin[8] == 1 else 'not-issued' }}">
+                                {{ 'Issued' if checkin[8] == 1 else 'Not Issued' }}
+                            </span>
+                        </td>
+                        <td class="action-buttons">
+                            {% if checkin[5] == 1 %}
+                                {% if checkin[8] == 1 and checkin[10] %}
+                                    <!-- HAS RECEIPT - SHOW PREVIEW BUTTON -->
+                                    <button class="btn btn-sm preview-btn-text" 
+                                            onclick="showPreview({{ checkin[9] }}, '{{ checkin[0] }}', '{{ checkin[10] }}')"
+                                            style="background-color: #17a2b8 !important; color: white !important; border: none !important; padding: 5px 10px !important; border-radius: 3px !important; cursor: pointer !important;">
+                                        PREVIEW
+                                    </button>
+                                {% else %}
+                                    <!-- NO RECEIPT - SHOW GENERATE BUTTON -->
+                                    <form method="POST" action="{{ url_for('generate_receipt', tourist_id=checkin[9]) }}" 
+                                          style="display: inline;">
+                                        <button type="submit" 
+                                                style="background-color: #28a745 !important; color: white !important; border: none !important; padding: 5px 10px !important; border-radius: 3px !important; cursor: pointer !important;">
+                                            GENERATE
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <!-- PENDING CHECK-INS - DISABLED -->
+                                <span style="background-color: #6c757d !important; color: white !important; padding: 5px 10px !important; border-radius: 3px !important; opacity: 0.6 !important;">
+                                    DISABLED
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <p>No check-ins recorded yet.</p>
+            <a href="{{ url_for('checkin') }}" class="btn btn-primary">Add First Check-In</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Room Status Visualization Section -->
+    <div class="room-status-section">
+        <h3>🏠 157 Rooms Status Overview</h3>
+        
+        <!-- Room Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🟢</div>
+                <div class="stat-info">
+                    <h3 style="color: #28a745;">{{ stats.available_today }}</h3>
+                    <p>Available</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔴</div>
+                <div class="stat-info">
+                    <h3 style="color: #dc3545;">{{ stats.total_occupied }}</h3>
+                    <p>Occupied</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🟡</div>
+                <div class="stat-info">
+                    <h3 style="color: #ffc107;">{{ stats.pending_checkins }}</h3>
+                    <p>Pending</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏨</div>
+                <div class="stat-info">
+                    <h3 style="color: #007bff;">{{ stats.total_rooms }}</h3>
+                    <p>Total</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Room Status Legend -->
+        <div class="room-legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #28a745;"></div>
+                <span>Available</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #dc3545;"></div>
+                <span>Occupied</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ffc107;"></div>
+                <span>Pending</span>
+            </div>
+        </div>
+        
+        <!-- Room Grid - All 157 Rooms -->
+        <div class="room-grid" id="roomGrid">
+            <!-- Rooms will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Room Status Visual -->
+    <div class="room-status-section">
+        <h3>🏠 Room Status Overview</h3>
+        <div class="room-grid">
+            <!-- Room grid will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<!-- Receipt Preview Modal -->
+<div id="previewModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8);">
+    <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 80%; max-width: 600px; border-radius: 10px;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0;">📄 Receipt Preview</h2>
+            <span class="close" onclick="closePreview()" style="font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+        </div>
+        <div id="previewContent" style="padding: 20px; background-color: #f8f9fa; border-radius: 5px;">
+            <!-- Preview content will be loaded here -->
+        </div>
+        <div class="modal-footer" style="margin-top: 20px; text-align: center;">
+            <button onclick="downloadReceipt()" class="btn btn-primary" style="background-color: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                📥 Download PDF
+            </button>
+            <button onclick="closePreview()" class="btn btn-secondary" style="background-color: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                ✖️ Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTouristId = null;
+
+function showPreview(touristId, guestName, receiptNumber) {
+    currentTouristId = touristId;
+    
+    // Show modal
+    document.getElementById('previewModal').style.display = 'block';
+    
+    // Load preview content
+    const previewContent = document.getElementById('previewContent');
+    previewContent.innerHTML = `
+        <div style="text-align: center; margin-bottom: 20px;">
+            <h3 style="color: #007bff; margin-bottom: 10px;">🏨 Hotel Management System</h3>
+            <p style="margin: 5px 0;">Receipt Preview</p>
+            <hr style="border: 1px solid #dee2e6; margin: 15px 0;">
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div>
+                <strong>Guest Name:</strong> ${guestName}
+            </div>
+            <div>
+                <strong>Receipt #:</strong> ${receiptNumber}
+            </div>
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <p style="color: #28a745; font-weight: bold;">✅ Receipt Generated Successfully</p>
+            <p style="color: #6c757d;">Click "Download PDF" to get the full receipt</p>
+        </div>
+        
+        <div style="background-color: #e9ecef; padding: 15px; border-radius: 5px; margin-top: 20px;">
+            <h4 style="margin-top: 0; color: #495057;">Receipt Details:</h4>
+            <p><strong>Guest:</strong> ${guestName}</p>
+            <p><strong>Receipt Number:</strong> ${receiptNumber}</p>
+            <p><strong>Status:</strong> <span style="color: #28a745;">Generated</span></p>
+            <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        </div>
+    `;
+}
+
+function closePreview() {
+    document.getElementById('previewModal').style.display = 'none';
+    currentTouristId = null;
+}
+
+function downloadReceipt() {
+    if (currentTouristId) {
+        // Navigate to download receipt
+        window.location.href = '/download_receipt/' + currentTouristId;
+    }
+    closePreview();
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('previewModal');
+    if (event.target == modal) {
+        closePreview();
+    }
+}
+
+// Room grid visualization
+document.addEventListener('DOMContentLoaded', function() {
+    loadRoomGrid();
+    
+    // Auto-refresh every 30 seconds
+    setInterval(loadRoomGrid, 30000);
+    
+    // Log for debugging
+    console.log('✅ FINAL DASHBOARD LOADED - TEXT BUTTONS FORCED');
+    console.log('📊 Preview buttons should be visible as TEXT buttons');
+    console.log('🏠 Room grid with 157 rooms loading...');
+});
+
+function loadRoomGrid() {
+    const roomGrid = document.getElementById('roomGrid');
+    if (!roomGrid) return;
+    
+    // Clear existing rooms
+    roomGrid.innerHTML = '';
+    
+    // Get occupied rooms from backend data
+    const occupiedRooms = new Set([
+        {% for room in stats.occupied_rooms %}
+            {{ room }}{{ "," if not loop.last }}
+        {% endfor %}
+    ]);
+    
+    // Get pending rooms (guests registered but not checked in)
+    const pendingRooms = new Set();
+    {% for checkin in stats.recent_checkins %}
+        {% if checkin[5] == 0 %}  {# check_in_done = 0 (pending) #}
+            pendingRooms.add({{ checkin[6] }});  {# room_number #}
+        {% endif %}
+    {% endfor %}
+    
+    // Generate all 157 rooms
+    for (let i = 1; i <= 157; i++) {
+        const roomDiv = document.createElement('div');
+        roomDiv.className = 'room-item';
+        roomDiv.textContent = i;
+        
+        // Set room status based on occupancy
+        if (occupiedRooms.has(i)) {
+            roomDiv.classList.add('occupied');
+            roomDiv.title = `Room ${i} - Occupied (Guest checked in)`;
+        } else if (pendingRooms.has(i)) {
+            roomDiv.classList.add('pending');
+            roomDiv.title = `Room ${i} - Pending (Guest registered, not checked in)`;
+        } else {
+            roomDiv.classList.add('available');
+            roomDiv.title = `Room ${i} - Available`;
+        }
+        
+        // Add click event for room details
+        roomDiv.addEventListener('click', function() {
+            showRoomDetails(i, occupiedRooms.has(i), pendingRooms.has(i));
+        });
+        
+        roomGrid.appendChild(roomDiv);
+    }
+    
+    console.log(`🏠 Loaded ${157} rooms - ${occupiedRooms.size} occupied, ${pendingRooms.size} pending`);
+}
+
+function showRoomDetails(roomNumber, isOccupied, isPending) {
+    let status, message;
+    
+    if (isOccupied) {
+        status = 'Occupied';
+        message = `Room ${roomNumber} is currently occupied by a guest who has completed check-in.`;
+    } else if (isPending) {
+        status = 'Pending';
+        message = `Room ${roomNumber} is reserved for a guest who has registered but not yet completed check-in.`;
+    } else {
+        status = 'Available';
+        message = `Room ${roomNumber} is available for new bookings.`;
+    }
+    
+    alert(`Room ${roomNumber}\nStatus: ${status}\n${message}`);
+}
+</script>
+
+<style>
+/* Room Status Visualization Styles */
+.room-status-section {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    margin: 2rem 0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.room-legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.room-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.room-item {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    color: white;
+    position: relative;
+}
+
+.room-item:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+.room-item.available {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.room-item.occupied {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.room-item.pending {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #333;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .room-statistics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .room-legend {
+        gap: 1rem;
+    }
+    
+    .room-grid {
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    }
+    
+    .room-item {
+        width: 40px;
+        height: 40px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Force text button styles */
+.preview-btn-text {
+    background-color: #17a2b8 !important;
+    color: white !important;
+    border: none !important;
+    padding: 5px 10px !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    font-weight: bold !important;
+    text-transform: uppercase !important;
+}
+
+.preview-btn-text:hover {
+    background-color: #138496 !important;
+    transform: translateY(-1px) !important;
+}
+</style>
+{% endblock %}

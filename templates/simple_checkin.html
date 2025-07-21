@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Simple Check-In - Hotel Managem        <p>Total Rooms: 157 | Occupied: {{ 157 - (available_rooms|length if available_rooms else 0) }}</p>nt System{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2>🛎️ Simple Check-In Form</h2>
+    
+    <form method="POST" action="/checkin">
+        <div style="margin: 15px 0;">
+            <label>Full Name *</label><br>
+            <input type="text" name="full_name" required style="width: 100%; padding: 8px;">
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>Address *</label><br>
+            <textarea name="address" required style="width: 100%; padding: 8px; height: 60px;"></textarea>
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>Area *</label><br>
+            <input type="text" name="area" required style="width: 100%; padding: 8px;">
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>Pincode *</label><br>
+            <input type="text" name="pincode" required style="width: 100%; padding: 8px;" maxlength="6">
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>Aadhar Number *</label><br>
+            <input type="text" name="aadhar_number" required style="width: 100%; padding: 8px;" maxlength="12">
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>Mobile Number *</label><br>
+            <input type="text" name="mobile_number" required style="width: 100%; padding: 8px;" maxlength="10">
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>Email *</label><br>
+            <input type="email" name="email" required style="width: 100%; padding: 8px;">
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>Select Room *</label><br>
+            <select name="room_number" required style="width: 100%; padding: 8px;">
+                <option value="">-- Select Room --</option>
+                {% for room in available_rooms %}
+                    <option value="{{ room }}">Room {{ room }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>Amount Paid Today *</label><br>
+            <input type="number" name="amount_paid_today" required style="width: 100%; padding: 8px;" step="0.01">
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>Remaining Amount *</label><br>
+            <input type="number" name="remaining_amount" required style="width: 100%; padding: 8px;" step="0.01">
+        </div>
+        
+        <div style="margin: 15px 0;">
+            <label>Check-in Completed?</label><br>
+            <input type="radio" name="check_in_done" value="yes" checked> Yes - Complete check-in<br>
+            <input type="radio" name="check_in_done" value="no"> No - Pending check-in
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <input type="submit" value="Submit Check-In" style="background: #007bff; color: white; padding: 12px 24px; border: none; cursor: pointer; font-size: 16px;">
+        </div>
+    </form>
+    
+    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 5px;">
+        <h4>Available Rooms: {{ available_rooms|length if available_rooms else 0 }}</h4>
+        <p>Total Rooms: 157 | Occupied: {{ 157 - (available_rooms|length if available_rooms else 0) }}</p>
+    </div>
+</div>
+
+<script>
+document.querySelector('form').addEventListener('submit', function(e) {
+    console.log('Simple form submitting...');
+    console.log('Action:', this.action);
+    console.log('Method:', this.method);
+    
+    // Basic validation
+    const roomSelect = document.querySelector('select[name="room_number"]');
+    if (!roomSelect.value) {
+        alert('Please select a room');
+        e.preventDefault();
+        return false;
+    }
+    
+    // Log form data
+    const formData = new FormData(this);
+    console.log('Form data:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}: ${value}`);
+    }
+    
+    return true;
+});
+</script>
+{% endblock %}

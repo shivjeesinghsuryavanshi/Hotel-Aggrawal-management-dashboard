@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tourist.full_name }} - Tourist Profile - Hotel Management System{% endblock %}
+
+{% block content %}
+<div class="profile-detail-container">
+    <div class="profile-header">
+        <div class="profile-nav">
+            <a href="{{ url_for('tourist_profiles') }}" class="back-btn">← Back to Profiles</a>
+        </div>
+        <div class="profile-title">
+            <div class="profile-avatar-large">
+                <span class="avatar-text">{{ tourist.full_name[:2].upper() }}</span>
+            </div>
+            <div class="profile-title-info">
+                <h1>{{ tourist.full_name }}</h1>
+                <p class="profile-subtitle">
+                    {% if tourist.check_in_done %}
+                        <span class="status-badge status-checked-in">✅ Checked In</span>
+                    {% else %}
+                        <span class="status-badge status-pending">⏳ Pending Check-in</span>
+                    {% endif %}
+                    <span class="room-info">Room {{ tourist.room_number }}</span>
+                </p>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <a href="{{ url_for('edit_tourist_profile', tourist_id=tourist.id) }}" class="btn btn-edit">
+                ✏️ Edit Profile
+            </a>
+            <form method="POST" action="{{ url_for('delete_tourist_profile', tourist_id=tourist.id) }}" 
+                  style="display: inline;" onsubmit="return confirmDelete('{{ tourist.full_name }}')">
+                <button type="submit" class="btn btn-delete">
+                    🗑️ Delete Profile
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="profile-content">
+        <div class="profile-sections">
+            <!-- Personal Information Section -->
+            <div class="profile-section">
+                <h3>👤 Personal Information</h3>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Full Name:</span>
+                            <span class="info-value">{{ tourist.full_name }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Father/Spouse Name:</span>
+                            <span class="info-value">{{ tourist.father_spouse_name or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Age:</span>
+                            <span class="info-value">{{ tourist.age or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Gender:</span>
+                            <span class="info-value">{{ tourist.gender or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Work/Occupation:</span>
+                            <span class="info-value">{{ tourist.work or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Children Count:</span>
+                            <span class="info-value">{{ tourist.children_count or 0 }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information Section -->
+            <div class="profile-section">
+                <h3>📞 Contact Information</h3>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Mobile Number:</span>
+                            <span class="info-value">{{ tourist.mobile_number }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Alternate Mobile:</span>
+                            <span class="info-value">{{ tourist.alternate_mobile or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Email:</span>
+                            <span class="info-value">{{ tourist.email }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Aadhar Number:</span>
+                            <span class="info-value">{{ tourist.aadhar_number }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address Information Section -->
+            <div class="profile-section">
+                <h3>📍 Address Information</h3>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item full-width">
+                            <span class="info-label">Address:</span>
+                            <span class="info-value">{{ tourist.address }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Area:</span>
+                            <span class="info-value">{{ tourist.area }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Pincode:</span>
+                            <span class="info-value">{{ tourist.pincode }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stay Information Section -->
+            <div class="profile-section">
+                <h3>🏨 Stay Information</h3>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Room Number:</span>
+                            <span class="info-value room-highlight">{{ tourist.room_number }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Check-in Date:</span>
+                            <span class="info-value">{{ tourist.check_in_date }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Check-out Date:</span>
+                            <span class="info-value">{{ tourist.check_out_date or 'Not set' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Check-out Time:</span>
+                            <span class="info-value">{{ tourist.check_out_time or 'Not set' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Extra Bed:</span>
+                            <span class="info-value">
+                                {% if tourist.extra_bed %}
+                                    <span class="extra-bed-yes">🛏️ Yes</span>
+                                {% else %}
+                                    <span class="extra-bed-no">❌ No</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Recipe Number:</span>
+                            <span class="info-value">{{ tourist.recipe_number or 'N/A' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Information Section -->
+            <div class="profile-section">
+                <h3>💰 Payment Information</h3>
+                <div class="section-content">
+                    <div class="payment-summary">
+                        <div class="payment-item">
+                            <span class="payment-label">Amount Paid Today:</span>
+                            <span class="payment-value paid">₹{{ "%.2f"|format(tourist.amount_paid_today) }}</span>
+                        </div>
+                        <div class="payment-item">
+                            <span class="payment-label">Remaining Amount:</span>
+                            <span class="payment-value {{ 'remaining' if tourist.remaining_amount > 0 else 'paid' }}">
+                                ₹{{ "%.2f"|format(tourist.remaining_amount) }}
+                            </span>
+                        </div>
+                        <div class="payment-item total">
+                            <span class="payment-label">Total Amount:</span>
+                            <span class="payment-value total">₹{{ "%.2f"|format(tourist.amount_paid_today + tourist.remaining_amount) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information Section -->
+            {% if tourist.comments %}
+            <div class="profile-section">
+                <h3>📝 Comments/Notes</h3>
+                <div class="section-content">
+                    <div class="comments-box">
+                        {{ tourist.comments }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Profile Metadata Section -->
+            <div class="profile-section">
+                <h3>📊 Profile Metadata</h3>
+                <div class="section-content">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Profile ID:</span>
+                            <span class="info-value">{{ tourist.id }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Created At:</span>
+                            <span class="info-value">{{ tourist.created_at }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(name) {
+    return confirm(`Are you sure you want to delete the profile for ${name}? This action cannot be undone.`);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,750 @@
+{% extends "base.html" %}
+
+{% block title %}Tourist Check-In - Aggarwal Bhawan, Haridwar{% endblock %}
+
+{% block content %}
+<div class="checkin-container">
+    <h2>🛎️ Tourist Check-In Form</h2>
+    <p class="form-subtitle">Fill out all required information for guest registration</p>
+    
+    <form method="POST" action="/checkin" class="checkin-form" id="checkinForm">
+        <div class="form-grid">
+            <!-- Personal Information Section -->
+            <div class="form-section">
+                <h3>👤 Personal Information</h3>
+                
+                <div class="form-group">
+                    <label for="full_name">Full Name *</label>
+                    <input type="text" id="full_name" name="full_name" required 
+                           value="{{ form_data.full_name if form_data else '' }}"
+                           placeholder="Enter guest's full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="father_spouse_name">Father/Spouse Name</label>
+                    <input type="text" id="father_spouse_name" name="father_spouse_name" 
+                           value="{{ form_data.father_spouse_name if form_data else '' }}"
+                           placeholder="Enter father's or spouse's name">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" 
+                               value="{{ form_data.age if form_data else '' }}"
+                               placeholder="Enter age" min="1" max="120">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender">
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male" {{ 'selected' if form_data and form_data.gender == 'Male' else '' }}>Male</option>
+                            <option value="Female" {{ 'selected' if form_data and form_data.gender == 'Female' else '' }}>Female</option>
+                            <option value="Other" {{ 'selected' if form_data and form_data.gender == 'Other' else '' }}>Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="work">Work/Occupation</label>
+                        <input type="text" id="work" name="work" 
+                               value="{{ form_data.work if form_data else '' }}"
+                               placeholder="Enter occupation">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="children_count">Children Count</label>
+                        <input type="number" id="children_count" name="children_count" 
+                               value="{{ form_data.children_count if form_data else '' }}"
+                               placeholder="Number of children" min="0" max="20">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="male_count">Male Count</label>
+                        <input type="number" id="male_count" name="male_count" 
+                               value="{{ form_data.male_count if form_data else '' }}"
+                               placeholder="Number of male guests" min="0" max="50">
+                        <small class="field-help">Total male guests in the group</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="female_count">Female Count</label>
+                        <input type="number" id="female_count" name="female_count" 
+                               value="{{ form_data.female_count if form_data else '' }}"
+                               placeholder="Number of female guests" min="0" max="50">
+                        <small class="field-help">Total female guests in the group</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">Address *</label>
+                    <textarea id="address" name="address" required rows="3" 
+                              placeholder="Enter complete address">{{ form_data.address if form_data else '' }}</textarea>
+                </div>
+            </div>
+            
+            <!-- Contact Information Section -->
+            <div class="form-section">
+                <h3>📞 Contact Information</h3>
+                
+                <div class="form-group">
+                    <label for="aadhar_number">ID Number *</label>
+                    <input type="number" id="aadhar_number" name="aadhar_number" required 
+                           value="{{ form_data.aadhar_number if form_data else '' }}"
+                           placeholder="Enter ID number">
+                    <small class="field-help">Enter any valid ID number</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mobile_number">Mobile Number *</label>
+                    <input type="tel" id="mobile_number" name="mobile_number" required 
+                           value="{{ form_data.mobile_number if form_data else '' }}"
+                           placeholder="Enter 10-digit mobile number" maxlength="10" 
+                           pattern="[0-9]{10}" title="Must be exactly 10 digits">
+                    <small class="field-help">Must be exactly 10 digits</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="alternate_mobile">Alternate Mobile Number</label>
+                    <input type="tel" id="alternate_mobile" name="alternate_mobile" 
+                           value="{{ form_data.alternate_mobile if form_data else '' }}"
+                           placeholder="Enter 10-digit alternate mobile number" maxlength="10" 
+                           pattern="[0-9]{10}" title="Must be exactly 10 digits">
+                    <small class="field-help">Optional - Must be exactly 10 digits</small>
+                </div>
+            </div>
+            
+            <!-- Payment and Room Information Section -->
+            <div class="form-section">
+                <h3>🏠 Room Selection & Payment</h3>
+                
+                <div class="form-group">
+                    <label for="room_number">Select Room Number *</label>
+                    <div class="room-selection-wrapper">
+                        <select id="room_number" name="room_number" required>
+                            <option value="">-- Select Available Room --</option>
+                            {% for room in available_rooms %}
+                                <option value="{{ room }}" 
+                                    {{ 'selected' if form_data and form_data.room_number == room|string else '' }}>
+                                    Room {{ room }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-refresh" onclick="refreshRooms()" title="Refresh available rooms">
+                            🔄
+                        </button>
+                    </div>
+                    <small class="field-help">
+                        Available rooms: {{ available_rooms|length }} out of 157 total rooms
+                        <span style="color: #28a745;">● Available</span>
+                        <span style="color: #dc3545;">● Occupied</span>
+                    </small>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="amount_paid_today">Amount Paid Today *</label>
+                        <input type="number" id="amount_paid_today" name="amount_paid_today" required 
+                               value="{{ form_data.amount_paid_today if form_data else '' }}"
+                               placeholder="Enter amount paid" min="0" step="0.01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="remaining_amount">Remaining Amount *</label>
+                        <input type="number" id="remaining_amount" name="remaining_amount" required 
+                               value="{{ form_data.remaining_amount if form_data else '' }}"
+                               placeholder="Enter remaining amount" min="0" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="payment_mode">Payment Mode</label>
+                    <select id="payment_mode" name="payment_mode">
+                        <option value="Cash" {{ 'selected' if form_data and form_data.payment_mode == 'Cash' else 'selected' }}>Cash / नकद</option>
+                        <option value="Cheque" {{ 'selected' if form_data and form_data.payment_mode == 'Cheque' else '' }}>Cheque / चेक</option>
+                        <option value="Online" {{ 'selected' if form_data and form_data.payment_mode == 'Online' else '' }}>Online / ऑनलाइन</option>
+                        <option value="Card" {{ 'selected' if form_data and form_data.payment_mode == 'Card' else '' }}>Card / कार्ड</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="check_in_done">Check-In Completed?</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="check_in_done" value="yes" 
+                                   {{ 'checked' if form_data and form_data.check_in_done else '' }}>
+                            <span class="radio-custom"></span>
+                            Yes - Complete check-in
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="check_in_done" value="no" 
+                                   {{ 'checked' if form_data and not form_data.check_in_done else 'checked' }}>
+                            <span class="radio-custom"></span>
+                            No - Pending check-in
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recipe_number">Receipt Number</label>
+                        <input type="text" id="recipe_number" name="recipe_number" 
+                               value="Auto-generated on submission" readonly
+                               placeholder="Will be auto-generated">
+                        <small class="field-help">Receipt number will be automatically assigned</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="extra_bed">Extra Bed Required</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="extra_bed" value="on" 
+                                       {{ 'checked' if form_data and form_data.extra_bed else '' }}>
+                                <span class="checkbox-custom"></span>
+                                Yes, extra bed needed
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Check-Out Information Section -->
+            <div class="form-section">
+                <h3>🚪 Check-Out Information (Optional)</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="check_out_date">Expected Check-Out Date</label>
+                        <input type="date" id="check_out_date" name="check_out_date" 
+                               value="{{ form_data.check_out_date if form_data else '' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="check_out_time">Expected Check-Out Time</label>
+                        <input type="time" id="check_out_time" name="check_out_time" 
+                               value="{{ form_data.check_out_time if form_data else '' }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="comments">Comments/Notes</label>
+                    <textarea id="comments" name="comments" rows="3" 
+                              placeholder="Enter any additional comments or special requests">{{ form_data.comments if form_data else '' }}</textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                🔄 Reset Form
+            </button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                ✅ Submit Check-In
+            </button>
+        </div>
+    </form>
+    
+    <!-- Room Assignment Info -->
+    <div class="room-info">
+        <h3>🏠 Room Selection Guide</h3>
+        <div class="room-stats">
+            <div class="stat-item">
+                <strong>Total Rooms:</strong> 157
+            </div>
+            <div class="stat-item">
+                <strong>Available Today:</strong> 
+                <span class="available-count">{{ available_rooms|length if available_rooms else 0 }}</span>
+            </div>
+            <div class="stat-item">
+                <strong>Occupied Today:</strong> 
+                <span class="occupied-count">{{ 157 - (available_rooms|length if available_rooms else 0) }}</span>
+            </div>
+        </div>
+        <p>📋 Select a room number from the dropdown above. Only available rooms are shown.</p>
+        <p>📄 After successful submission, a <strong>PDF receipt</strong> will be generated automatically.</p>
+        
+        {% if available_rooms and available_rooms|length > 0 %}
+            <div class="available-rooms-preview">
+                <h4>Available Rooms Preview:</h4>
+                <div class="room-numbers">
+                    {% for room in available_rooms[:20] %}
+                        <span class="room-badge">{{ room }}</span>
+                    {% endfor %}
+                    {% if available_rooms|length > 20 %}
+                        <span class="room-badge more">+{{ available_rooms|length - 20 }} more</span>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="no-rooms-warning">
+                <p>⚠️ <strong>No rooms available today!</strong></p>
+                <p>All 157 rooms are currently occupied.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Form validation and enhancement
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM Content Loaded - Initializing form');
+    
+    const form = document.getElementById('checkinForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const roomSelect = document.getElementById('room_number');
+    
+    console.log('Form elements found:', {
+        form: !!form,
+        submitBtn: !!submitBtn,
+        roomSelect: !!roomSelect
+    });
+    
+    if (!form) {
+        console.error('❌ Form not found!');
+        return;
+    }
+    
+    if (!submitBtn) {
+        console.error('❌ Submit button not found!');
+        return;
+    }
+    
+    // Room selection handler
+    roomSelect.addEventListener('change', function() {
+        if (this.value) {
+            this.style.borderColor = '#28a745';
+            this.style.backgroundColor = '#f8fff9';
+        } else {
+            this.style.borderColor = '#dc3545';
+            this.style.backgroundColor = '#fff5f5';
+        }
+    });
+    
+    // Real-time validation for Aadhar number
+    const aadharInput = document.getElementById('aadhar_number');
+    aadharInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, ''); // Only numbers
+        if (this.value.length > 12) {
+            this.value = this.value.slice(0, 12);
+        }
+        
+        // Visual feedback
+        if (this.value.length === 12) {
+            this.style.borderColor = '#28a745';
+            this.style.backgroundColor = '#f8fff9';
+        } else {
+            this.style.borderColor = '#dc3545';
+            this.style.backgroundColor = '#fff5f5';
+        }
+    });
+    
+    // Real-time validation for Mobile number
+    const mobileInput = document.getElementById('mobile_number');
+    mobileInput.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, ''); // Only numbers
+        if (this.value.length > 10) {
+            this.value = this.value.slice(0, 10);
+        }
+        
+        // Visual feedback
+        if (this.value.length === 10) {
+            this.style.borderColor = '#28a745';
+            this.style.backgroundColor = '#f8fff9';
+        } else {
+            this.style.borderColor = '#dc3545';
+            this.style.backgroundColor = '#fff5f5';
+        }
+    });
+    
+    // Real-time validation for Male count
+    const maleCountInput = document.getElementById('male_count');
+    if (maleCountInput) {
+        maleCountInput.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (this.value && (isNaN(value) || value < 0 || value > 50)) {
+                this.style.borderColor = '#dc3545';
+                this.style.backgroundColor = '#fff5f5';
+            } else {
+                this.style.borderColor = '#28a745';
+                this.style.backgroundColor = '#f8fff9';
+            }
+        });
+    }
+    
+    // Real-time validation for Female count
+    const femaleCountInput = document.getElementById('female_count');
+    if (femaleCountInput) {
+        femaleCountInput.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (this.value && (isNaN(value) || value < 0 || value > 50)) {
+                this.style.borderColor = '#dc3545';
+                this.style.backgroundColor = '#fff5f5';
+            } else {
+                this.style.borderColor = '#28a745';
+                this.style.backgroundColor = '#f8fff9';
+            }
+        });
+    }
+    
+    // Form submission with enhanced validation and feedback
+    form.addEventListener('submit', function(e) {
+        console.log('=== FORM SUBMISSION STARTED ===');
+        console.log('Timestamp:', new Date().toLocaleString());
+        
+        let isValid = true;
+        let errors = [];
+        
+        // Validate room selection
+        if (!roomSelect.value) {
+            errors.push('Please select a room number');
+            roomSelect.style.borderColor = '#dc3545';
+            roomSelect.style.backgroundColor = '#fff5f5';
+            isValid = false;
+        }
+        
+        // Validate Aadhar
+        if (aadharInput.value.length !== 12) {
+            errors.push('Aadhar number must be exactly 12 digits');
+            isValid = false;
+        }
+        
+        // Validate Mobile
+        if (mobileInput.value.length !== 10) {
+            errors.push('Mobile number must be exactly 10 digits');
+            isValid = false;
+        }
+        
+        // Validate Male Count (optional)
+        const maleCountInput = document.getElementById('male_count');
+        if (maleCountInput && maleCountInput.value) {
+            const maleCount = parseInt(maleCountInput.value);
+            if (isNaN(maleCount) || maleCount < 0 || maleCount > 50) {
+                errors.push('Male count must be between 0 and 50');
+                isValid = false;
+            }
+        }
+        
+        // Validate Female Count (optional)
+        const femaleCountInput = document.getElementById('female_count');
+        if (femaleCountInput && femaleCountInput.value) {
+            const femaleCount = parseInt(femaleCountInput.value);
+            if (isNaN(femaleCount) || femaleCount < 0 || femaleCount > 50) {
+                errors.push('Female count must be between 0 and 50');
+                isValid = false;
+            }
+        }
+        
+        console.log('Validation errors:', errors);
+        console.log('Form valid:', isValid);
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fix the following errors:\n- ' + errors.join('\n- '));
+            console.log('❌ Form submission prevented due to validation errors');
+            // Reset button state
+            submitBtn.innerHTML = '✅ Submit Check-In';
+            submitBtn.disabled = false;
+            return false;
+        }
+        
+        // Only change button state if validation passes
+        console.log('✅ Validation passed - changing button state');
+        submitBtn.innerHTML = '⏳ Processing Check-In...';
+        submitBtn.disabled = true;
+        
+        // Auto-reset button after 10 seconds if form doesn't submit
+        setTimeout(() => {
+            if (submitBtn.innerHTML === '⏳ Processing Check-In...') {
+                console.log('⚠️  Form submission timeout - resetting button');
+                submitBtn.innerHTML = '✅ Submit Check-In';
+                submitBtn.disabled = false;
+            }
+        }, 10000);
+        
+        // Log form data before submission
+        const formData = new FormData(form);
+        console.log('✅ Form data being submitted:');
+        for (let [key, value] of formData.entries()) {
+            console.log(`  ${key}: ${value}`);
+        }
+        
+        console.log('🌐 Form submitting to:', form.action);
+        console.log('📤 Form method:', form.method);
+        console.log('🚀 Submitting form now...');
+        
+        // Add a small delay to show the loading state
+        setTimeout(() => {
+            console.log('✈️  Form submitted successfully!');
+        }, 100);
+        
+        // Allow form to submit normally
+        return true;
+    }, { once: false }); // Allow multiple submissions
+    
+    // Backup: Direct button click handler
+    submitBtn.addEventListener('click', function(e) {
+        console.log('🖱️  Submit button clicked directly');
+        
+        // Prevent default form submission temporarily
+        e.preventDefault();
+        
+        // If this fires but form submit doesn't, manually handle submission
+        if (e.target.type === 'submit') {
+            console.log('Button type is submit - manually triggering validation and submission');
+            
+            // Manual validation and submission
+            let isValid = true;
+            let errors = [];
+            
+            // Get all required input elements
+            const aadharInput = document.getElementById('aadhar_number');
+            const mobileInput = document.getElementById('mobile_number');
+            
+            console.log('🔍 Starting manual validation...');
+            
+            // Validate room selection
+            if (!roomSelect.value) {
+                errors.push('Please select a room number');
+                roomSelect.style.borderColor = '#dc3545';
+                roomSelect.style.backgroundColor = '#fff5f5';
+                isValid = false;
+            }
+            
+            // Validate Aadhar
+            if (aadharInput.value.length !== 12) {
+                errors.push('Aadhar number must be exactly 12 digits');
+                isValid = false;
+            }
+            
+            // Validate Mobile
+            if (mobileInput.value.length !== 10) {
+                errors.push('Mobile number must be exactly 10 digits');
+                isValid = false;
+            }
+            
+            // Validate Male Count (optional)
+            const maleCountInput = document.getElementById('male_count');
+            if (maleCountInput && maleCountInput.value) {
+                const maleCount = parseInt(maleCountInput.value);
+                if (isNaN(maleCount) || maleCount < 0 || maleCount > 50) {
+                    errors.push('Male count must be between 0 and 50');
+                    isValid = false;
+                }
+            }
+            
+            // Validate Female Count (optional)
+            const femaleCountInput = document.getElementById('female_count');
+            if (femaleCountInput && femaleCountInput.value) {
+                const femaleCount = parseInt(femaleCountInput.value);
+                if (isNaN(femaleCount) || femaleCount < 0 || femaleCount > 50) {
+                    errors.push('Female count must be between 0 and 50');
+                    isValid = false;
+                }
+            }
+            
+            console.log('Validation errors:', errors);
+            console.log('Form valid:', isValid);
+            
+            if (!isValid) {
+                alert('Please fix the following errors:\n- ' + errors.join('\n- '));
+                console.log('❌ Form submission prevented due to validation errors');
+                // Reset button state
+                submitBtn.innerHTML = '✅ Submit Check-In';
+                submitBtn.disabled = false;
+                return false;
+            }
+            
+            // Only change button state if validation passes
+            console.log('✅ Validation passed - submitting form manually');
+            submitBtn.innerHTML = '⏳ Processing Check-In...';
+            submitBtn.disabled = true;
+            
+            // Log form data before submission
+            const formData = new FormData(form);
+            console.log('✅ Form data being submitted:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value}`);
+            }
+            
+            console.log('🚀 Manually submitting form...');
+            
+            // Submit the form manually
+            form.submit();
+        }
+    });
+    
+    // Auto-calculate total amount
+    const paidInput = document.getElementById('amount_paid_today');
+    const remainingInput = document.getElementById('remaining_amount');
+    
+    function calculateTotal() {
+        const paid = parseFloat(paidInput.value) || 0;
+        const remaining = parseFloat(remainingInput.value) || 0;
+        const total = paid + remaining;
+        
+        if (total > 0) {
+            const totalDisplay = document.getElementById('total-display');
+            if (!totalDisplay) {
+                const totalDiv = document.createElement('div');
+                totalDiv.id = 'total-display';
+                totalDiv.className = 'total-amount';
+                totalDiv.innerHTML = `<strong>Total Amount: ₹${total.toFixed(2)}</strong>`;
+                remainingInput.parentNode.appendChild(totalDiv);
+            } else {
+                totalDisplay.innerHTML = `<strong>Total Amount: ₹${total.toFixed(2)}</strong>`;
+            }
+        }
+    }
+    
+    // Auto-calculate total guests
+    const childrenCountInput = document.getElementById('children_count');
+    
+    function calculateGuestTotal() {
+        const male = parseInt(maleCountInput.value) || 0;
+        const female = parseInt(femaleCountInput.value) || 0;
+        const children = parseInt(childrenCountInput.value) || 0;
+        const total = male + female + children;
+        
+        if (total > 0) {
+            const guestTotalDisplay = document.getElementById('guest-total-display');
+            if (!guestTotalDisplay) {
+                const guestTotalDiv = document.createElement('div');
+                guestTotalDiv.id = 'guest-total-display';
+                guestTotalDiv.className = 'guest-total';
+                guestTotalDiv.innerHTML = `<strong>Total Guests: ${total} (${male} Male, ${female} Female, ${children} Children)</strong>`;
+                childrenCountInput.parentNode.appendChild(guestTotalDiv);
+            } else {
+                guestTotalDisplay.innerHTML = `<strong>Total Guests: ${total} (${male} Male, ${female} Female, ${children} Children)</strong>`;
+            }
+        }
+    }
+    
+    paidInput.addEventListener('input', calculateTotal);
+    remainingInput.addEventListener('input', calculateTotal);
+    
+    if (maleCountInput) maleCountInput.addEventListener('input', calculateGuestTotal);
+    if (femaleCountInput) femaleCountInput.addEventListener('input', calculateGuestTotal);
+    if (childrenCountInput) childrenCountInput.addEventListener('input', calculateGuestTotal);
+    
+    // Reset form state after any server errors
+    function resetFormState() {
+        submitBtn.innerHTML = '✅ Submit Check-In';
+        submitBtn.disabled = false;
+    }
+    
+    // Check if there are any flash messages (indicating form was submitted but had errors)
+    const flashMessages = document.querySelectorAll('.flash');
+    if (flashMessages.length > 0) {
+        // Reset form state since we're back due to validation errors
+        resetFormState();
+    }
+    
+    // Reset form state on page load
+    window.addEventListener('load', resetFormState);
+});
+
+// Refresh available rooms
+function refreshRooms() {
+    fetch('/api/available_rooms')
+        .then(response => response.json())
+        .then(data => {
+            const roomSelect = document.getElementById('room_number');
+            const currentValue = roomSelect.value;
+            
+            // Clear existing options
+            roomSelect.innerHTML = '<option value="">-- Select Available Room --</option>';
+            
+            // Add new options
+            data.available_rooms.forEach(room => {
+                const option = document.createElement('option');
+                option.value = room;
+                option.textContent = `Room ${room}`;
+                if (room.toString() === currentValue) {
+                    option.selected = true;
+                }
+                roomSelect.appendChild(option);
+            });
+            
+            // Update statistics
+            const availableCountEl = document.querySelector('.available-count');
+            const occupiedCountEl = document.querySelector('.occupied-count');
+            if (availableCountEl) availableCountEl.textContent = data.available_count;
+            if (occupiedCountEl) occupiedCountEl.textContent = data.occupied_count;
+        })
+        .catch(error => console.error('Error refreshing rooms:', error));
+}
+
+// Reset form function
+function resetForm() {
+    if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+        document.getElementById('checkinForm').reset();
+        
+        // Reset visual feedback
+        const inputs = document.querySelectorAll('input, select');
+        inputs.forEach(input => {
+            input.style.borderColor = '#ddd';
+            input.style.backgroundColor = 'white';
+        });
+        
+        // Remove total display
+        const totalDisplay = document.getElementById('total-display');
+        if (totalDisplay) {
+            totalDisplay.remove();
+        }
+        
+        // Remove guest total display
+        const guestTotalDisplay = document.getElementById('guest-total-display');
+        if (guestTotalDisplay) {
+            guestTotalDisplay.remove();
+        }
+        
+        // Reset submit button
+        document.getElementById('submitBtn').innerHTML = '✅ Submit Check-In';
+        document.getElementById('submitBtn').disabled = false;
+        
+        // Focus on first field
+        document.getElementById('full_name').focus();
+    }
+}
+
+// Auto-refresh rooms every 30 seconds
+setInterval(refreshRooms, 30000);
+
+// Auto-focus on first field
+document.getElementById('full_name').focus();
+
+// Debug function - call this from console if needed
+window.debugForm = function() {
+    console.log('🔍 FORM DEBUG INFO');
+    const form = document.getElementById('checkinForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    console.log('Form element:', form);
+    console.log('Submit button:', submitBtn);
+    console.log('Form action:', form?.action);
+    console.log('Form method:', form?.method);
+    
+    // Check all form fields
+    const formData = new FormData(form);
+    console.log('Current form data:');
+    for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}: "${value}"`);
+    }
+    
+    // Test manual submission
+    if (confirm('Test manual form submission?')) {
+        console.log('Manually triggering form submission...');
+        form.submit();
+    }
+};
+
+console.log('✅ Form debugging complete. Type debugForm() in console for manual testing.');
+</script>
+{% endblock %}

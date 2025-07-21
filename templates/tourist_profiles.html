@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Tourist Profiles - Hotel Management System{% endblock %}
+
+{% block content %}
+<div class="profiles-container">
+    <div class="profiles-header">
+        <h2>👥 Tourist Profiles</h2>
+        <p class="profiles-subtitle">Manage all checked-in guests and their information</p>
+        <div class="profiles-stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ tourists|length }}</div>
+                <div class="stat-label">Total Guests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ tourists|selectattr('check_in_done')|list|length }}</div>
+                <div class="stat-label">Checked In</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ tourists|rejectattr('check_in_done')|list|length }}</div>
+                <div class="stat-label">Pending</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="profiles-controls">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Search tourists by name, room, or mobile..." onkeyup="searchTourists()">
+        </div>
+        <div class="filter-controls">
+            <select id="statusFilter" onchange="filterTourists()">
+                <option value="">All Status</option>
+                <option value="checked-in">Checked In</option>
+                <option value="pending">Pending</option>
+            </select>
+            <select id="sortOrder" onchange="sortTourists()">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name">Name A-Z</option>
+                <option value="room">Room Number</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="profiles-grid" id="profilesGrid">
+        {% for tourist in tourists %}
+        <div class="profile-card" data-status="{{ 'checked-in' if tourist.check_in_done else 'pending' }}" 
+             data-name="{{ tourist.full_name.lower() }}" 
+             data-room="{{ tourist.room_number }}" 
+             data-mobile="{{ tourist.mobile_number }}"
+             data-date="{{ tourist.created_at }}">
+            
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <span class="avatar-text">{{ tourist.full_name[:2].upper() }}</span>
+                </div>
+                <div class="profile-info">
+                    <h3 class="profile-name">{{ tourist.full_name }}</h3>
+                    <p class="profile-detail">
+                        <span class="detail-label">Room:</span> 
+                        <span class="room-number">{{ tourist.room_number }}</span>
+                    </p>
+                    <p class="profile-detail">
+                        <span class="detail-label">Mobile:</span> 
+                        <span>{{ tourist.mobile_number }}</span>
+                    </p>
+                </div>
+                <div class="profile-status">
+                    {% if tourist.check_in_done %}
+                        <span class="status-badge status-checked-in">✅ Checked In</span>
+                    {% else %}
+                        <span class="status-badge status-pending">⏳ Pending</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="profile-details">
+                <div class="detail-row">
+                    <span class="detail-label">Age:</span>
+                    <span>{{ tourist.age or 'N/A' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Gender:</span>
+                    <span>{{ tourist.gender or 'N/A' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Work:</span>
+                    <span>{{ tourist.work or 'N/A' }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Children:</span>
+                    <span>{{ tourist.children_count or 0 }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Check-in Date:</span>
+                    <span>{{ tourist.check_in_date }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Amount Paid:</span>
+                    <span class="amount-paid">₹{{ "%.2f"|format(tourist.amount_paid_today) }}</span>
+                </div>
+                {% if tourist.remaining_amount > 0 %}
+                <div class="detail-row">
+                    <span class="detail-label">Remaining:</span>
+                    <span class="amount-remaining">₹{{ "%.2f"|format(tourist.remaining_amount) }}</span>
+                </div>
+                {% endif %}
+                {% if tourist.extra_bed %}
+                <div class="detail-row">
+                    <span class="detail-label">Extra Bed:</span>
+                    <span class="extra-bed">🛏️ Yes</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="profile-actions">
+                <a href="{{ url_for('tourist_profile_detail', tourist_id=tourist.id) }}" class="btn btn-view">
+                    👁️ View
+                </a>
+                <a href="{{ url_for('edit_tourist_profile', tourist_id=tourist.id) }}" class="btn btn-edit">
+                    ✏️ Edit
+                </a>
+                <form method="POST" action="{{ url_for('delete_tourist_profile', tourist_id=tourist.id) }}" 
+                      style="display: inline;" onsubmit="return confirmDelete('{{ tourist.full_name }}')">
+                    <button type="submit" class="btn btn-delete">
+                        🗑️ Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if not tourists %}
+    <div class="no-profiles">
+        <div class="no-profiles-icon">👥</div>
+        <h3>No Tourist Profiles Found</h3>
+        <p>No guests have checked in yet. Start by adding a new guest through the Check-In form.</p>
+        <a href="{{ url_for('checkin') }}" class="btn btn-primary">
+            ➕ Add New Guest
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function searchTourists() {
+    const searchInput = document.getElementById('searchInput');
+    const searchTerm = searchInput.value.toLowerCase();
+    const profileCards = document.querySelectorAll('.profile-card');
+    
+    profileCards.forEach(card => {
+        const name = card.dataset.name;
+        const room = card.dataset.room;
+        const mobile = card.dataset.mobile;
+        
+        if (name.includes(searchTerm) || room.includes(searchTerm) || mobile.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function filterTourists() {
+    const statusFilter = document.getElementById('statusFilter');
+    const selectedStatus = statusFilter.value;
+    const profileCards = document.querySelectorAll('.profile-card');
+    
+    profileCards.forEach(card => {
+        const status = card.dataset.status;
+        
+        if (selectedStatus === '' || status === selectedStatus) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function sortTourists() {
+    const sortOrder = document.getElementById('sortOrder');
+    const selectedSort = sortOrder.value;
+    const profilesGrid = document.getElementById('profilesGrid');
+    const profileCards = Array.from(document.querySelectorAll('.profile-card'));
+    
+    profileCards.sort((a, b) => {
+        switch(selectedSort) {
+            case 'newest':
+                return new Date(b.dataset.date) - new Date(a.dataset.date);
+            case 'oldest':
+                return new Date(a.dataset.date) - new Date(b.dataset.date);
+            case 'name':
+                return a.dataset.name.localeCompare(b.dataset.name);
+            case 'room':
+                return parseInt(a.dataset.room) - parseInt(b.dataset.room);
+            default:
+                return 0;
+        }
+    });
+    
+    profileCards.forEach(card => {
+        profilesGrid.appendChild(card);
+    });
+}
+
+function confirmDelete(name) {
+    return confirm(`Are you sure you want to delete the profile for ${name}? This action cannot be undone.`);
+}
+</script>
+{% endblock %}

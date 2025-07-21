@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Hotel Management System{% endblock %}
+
+{% block con                                               class="btn btn-sm btn-info" title="Preview Receipt">
+                                    👁️
+                                </a>                         <a href="{{ url_for('preview_receipt', tourist_id=checkin[9]) }}" 
+                                   class="btn btn-sm btn-info" title="Preview Receipt">
+                                    👁️
+                                </a>                         <a href="{{ url_for('preview_receipt', tourist_id=checkin[9]) }}" 
+                                   class="btn btn-sm btn-info" title="Preview Receipt">
+                                    👁️
+                                </a>                              class="btn btn-sm btn-info" title="Preview Receipt">
+                                    👁️
+                                </a>                         <a href="{{ url_for('preview_receipt', tourist_id=checkin[9]) }}" 
+                                   class="btn btn-sm btn-info" title="Preview Receipt">
+                                    👁️
+                                </a> %}
+<div class="dashboard-container">
+    <h2>📊 Hotel Dashboard</h2>
+    
+    <!-- Live Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card total-rooms">
+            <div class="stat-icon">🏨</div>
+            <div class="stat-info">
+                <h3>Total Rooms</h3>
+                <p class="stat-number">{{ stats.total_rooms }}</p>
+            </div>
+        </div>
+        
+        <div class="stat-card checked-in">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <h3>Checked-In Today</h3>
+                <p class="stat-number">{{ stats.checked_in_today }}</p>
+            </div>
+        </div>
+        
+        <div class="stat-card available">
+            <div class="stat-icon">🛏️</div>
+            <div class="stat-info">
+                <h3>Available Today</h3>
+                <p class="stat-number">{{ stats.available_today }}</p>
+            </div>
+        </div>
+        
+        <div class="stat-card occupancy">
+            <div class="stat-icon">📈</div>
+            <div class="stat-info">
+                <h3>Occupancy Rate</h3>
+                <p class="stat-number">{{ "%.1f"|format((stats.checked_in_today / stats.total_rooms * 100)) }}%</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h3>🚀 Quick Actions</h3>
+        <div class="action-buttons">
+            <a href="{{ url_for('checkin') }}" class="btn btn-primary">
+                ➕ New Check-In
+            </a>
+            <a href="{{ url_for('calendar_view') }}" class="btn btn-secondary">
+                📅 View Calendar
+            </a>
+            <a href="{{ url_for('export_excel') }}" class="btn btn-success">
+                📊 Export Excel Report
+            </a>
+            <a href="{{ url_for('search_tourists_route') }}" class="btn btn-info">
+                🔍 Search & Filter
+            </a>
+            {% if session.latest_receipt %}
+            <a href="{{ url_for('download_receipt') }}" class="btn btn-info">
+                📄 Download Latest Receipt
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Recent Check-ins Table -->
+    <div class="recent-checkins">
+        <h3>📋 Recent Check-ins</h3>
+        {% if stats.recent_checkins %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Guest Name</th>
+                        <th>Mobile</th>
+                        <th>Aadhar</th>
+                        <th>Amount Paid</th>
+                        <th>Remaining</th>
+                        <th>Check-In Status</th>
+                        <th>Room No.</th>
+                        <th>Date</th>
+                        <th>Receipt</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for checkin in stats.recent_checkins %}
+                    <tr>
+                        <td>{{ checkin[0] }}</td>
+                        <td>{{ checkin[1] }}</td>
+                        <td>{{ checkin[2] }}</td>
+                        <td>₹{{ "%.2f"|format(checkin[3]) }}</td>
+                        <td>₹{{ "%.2f"|format(checkin[4]) }}</td>
+                        <td>
+                            <span class="status-badge {{ 'completed' if checkin[5] else 'pending' }}">
+                                {{ 'Completed' if checkin[5] else 'Pending' }}
+                            </span>
+                        </td>
+                        <td class="room-number">{{ checkin[6] }}</td>
+                        <td>{{ checkin[7] }}</td>
+                        <td>
+                            <span class="receipt-status {{ 'issued' if checkin[8] else 'not-issued' }}">
+                                {{ 'Issued' if checkin[8] else 'Not Issued' }}
+                            </span>
+                        </td>
+                        <td class="action-buttons">
+                            {% if checkin[5] %}
+                                <!-- Only show receipt options for completed check-ins -->
+                                {% if checkin[8] and checkin[10] %}
+                                <a href="{{ url_for('preview_receipt', tourist_id=checkin[9]) }}" 
+                                   class="btn btn-sm btn-info" title="Preview Receipt">
+                                    �️
+                                </a>
+                                {% else %}
+                                <form method="POST" action="{{ url_for('generate_receipt', tourist_id=checkin[9]) }}" 
+                                      style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-primary" 
+                                            title="Generate Receipt">
+                                        🧾
+                                    </button>
+                                </form>
+                                {% endif %}
+                            {% else %}
+                                <!-- For pending check-ins, show that receipt is not available -->
+                                <span class="btn btn-sm btn-secondary" title="Complete check-in first" disabled>
+                                    🚫
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <p>No check-ins recorded yet.</p>
+            <a href="{{ url_for('checkin') }}" class="btn btn-primary">Add First Check-In</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Room Status Visual -->
+    <div class="room-status-section">
+        <h3>🏠 Room Status Overview</h3>
+        <div id="room-grid" class="room-grid">
+            <!-- Rooms will be loaded dynamically via JavaScript -->
+        </div>
+        <div class="room-legend">
+            <div class="legend-item">
+                <span class="legend-color available"></span>
+                <span>Available</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color occupied"></span>
+                <span>Occupied</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load room status grid
+async function loadRoomStatus() {
+    try {
+        const response = await fetch('/api/room_status');
+        const roomStatus = await response.json();
+        
+        const roomGrid = document.getElementById('room-grid');
+        roomGrid.innerHTML = '';
+        
+        // Create room status grid (157 rooms)
+        for (let roomNum = 1; roomNum <= 157; roomNum++) {
+            const roomDiv = document.createElement('div');
+            roomDiv.className = `room-cell ${roomStatus[roomNum]}`;
+            roomDiv.textContent = roomNum;
+            roomDiv.title = `Room ${roomNum}: ${roomStatus[roomNum]}`;
+            roomGrid.appendChild(roomDiv);
+        }
+    } catch (error) {
+        console.error('Error loading room status:', error);
+    }
+}
+
+// Load room status on page load
+document.addEventListener('DOMContentLoaded', loadRoomStatus);
+
+// Auto-refresh dashboard every 30 seconds
+setInterval(() => {
+    loadRoomStatus();
+}, 30000);
+
+// Add click-to-refresh functionality
+document.querySelector('.dashboard-container h2').addEventListener('click', () => {
+    location.reload();
+});
+</script>
+{% endblock %}

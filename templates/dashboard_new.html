@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Hotel Management System{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h2>🏨 Hotel Management Dashboard</h2>
+        <p class="welcome-message">Welcome back! Here's your hotel status overview.</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-container">
+        <div class="stat-card">
+            <div class="stat-icon">🏨</div>
+            <div class="stat-info">
+                <h3>{{ stats.total_rooms }}</h3>
+                <p>Total Rooms</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <h3>{{ stats.checked_in_today }}</h3>
+                <p>Checked In Today</p>
+            </div>
+        </div>
+        <div class="stat-card available">
+            <div class="stat-icon">🔓</div>
+            <div class="stat-info">
+                <h3>{{ stats.available_today }}</h3>
+                <p>Available Rooms</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h3>🚀 Quick Actions</h3>
+        <div class="action-buttons">
+            <a href="{{ url_for('checkin') }}" class="btn btn-primary">
+                ➕ New Check-In
+            </a>
+            <a href="{{ url_for('calendar_view') }}" class="btn btn-secondary">
+                📅 View Calendar
+            </a>
+            <a href="{{ url_for('export_excel') }}" class="btn btn-success">
+                📊 Export Excel Report
+            </a>
+            <a href="{{ url_for('search_tourists_route') }}" class="btn btn-info">
+                🔍 Search & Filter
+            </a>
+            {% if session.latest_receipt %}
+            <a href="{{ url_for('download_receipt') }}" class="btn btn-info">
+                📄 Download Latest Receipt
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Check-ins Table -->
+    <div class="recent-checkins">
+        <h3>📋 Recent Check-ins</h3>
+        {% if stats.recent_checkins %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Guest Name</th>
+                        <th>Mobile</th>
+                        <th>Aadhar</th>
+                        <th>Amount Paid</th>
+                        <th>Remaining</th>
+                        <th>Check-In Status</th>
+                        <th>Room No.</th>
+                        <th>Date</th>
+                        <th>Receipt</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for checkin in stats.recent_checkins %}
+                    <tr>
+                        <td>{{ checkin[0] }}</td>
+                        <td>{{ checkin[1] }}</td>
+                        <td>{{ checkin[2] }}</td>
+                        <td>₹{{ "%.2f"|format(checkin[3]) }}</td>
+                        <td>₹{{ "%.2f"|format(checkin[4]) }}</td>
+                        <td>
+                            <span class="status-badge {{ 'completed' if checkin[5] else 'pending' }}">
+                                {{ 'Completed' if checkin[5] else 'Pending' }}
+                            </span>
+                        </td>
+                        <td class="room-number">{{ checkin[6] }}</td>
+                        <td>{{ checkin[7] }}</td>
+                        <td>
+                            <span class="receipt-status {{ 'issued' if checkin[8] else 'not-issued' }}">
+                                {{ 'Issued' if checkin[8] else 'Not Issued' }}
+                            </span>
+                        </td>
+                        <td class="action-buttons">
+                            <!-- NEW PREVIEW LOGIC -->
+                            {% if checkin[5] == 1 %}
+                                <!-- COMPLETED CHECK-INS -->
+                                {% if checkin[8] == 1 and checkin[10] %}
+                                    <!-- HAS RECEIPT - SHOW PREVIEW EYE -->
+                                    <a href="{{ url_for('preview_receipt', tourist_id=checkin[9]) }}" 
+                                       class="btn btn-sm btn-info preview-btn" 
+                                       title="Preview Receipt">
+                                        👁️
+                                    </a>
+                                {% else %}
+                                    <!-- NO RECEIPT - SHOW GENERATE BUTTON -->
+                                    <form method="POST" action="{{ url_for('generate_receipt', tourist_id=checkin[9]) }}" 
+                                          style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-primary generate-btn" 
+                                                title="Generate Receipt">
+                                            🧾
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <!-- PENDING CHECK-INS - DISABLED -->
+                                <span class="btn btn-sm btn-secondary disabled-btn" 
+                                      title="Complete check-in first">
+                                    🚫
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <p>No check-ins recorded yet.</p>
+            <a href="{{ url_for('checkin') }}" class="btn btn-primary">Add First Check-In</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Room Status Visual -->
+    <div class="room-status-section">
+        <h3>🏠 Room Status Overview</h3>
+        <div class="room-grid">
+            <!-- Room grid will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh dashboard every 30 seconds
+setInterval(function() {
+    location.reload();
+}, 30000);
+
+// Room grid visualization
+document.addEventListener('DOMContentLoaded', function() {
+    const roomGrid = document.querySelector('.room-grid');
+    if (roomGrid) {
+        // Create room grid (157 rooms)
+        for (let i = 1; i <= 157; i++) {
+            const roomDiv = document.createElement('div');
+            roomDiv.className = 'room-item available'; // Default to available
+            roomDiv.textContent = i;
+            roomDiv.title = `Room ${i} - Available`;
+            roomGrid.appendChild(roomDiv);
+        }
+    }
+});
+
+// Debug information
+console.log('Dashboard loaded with preview feature');
+console.log('Preview buttons should show 👁️ for guests with receipts');
+</script>
+{% endblock %}

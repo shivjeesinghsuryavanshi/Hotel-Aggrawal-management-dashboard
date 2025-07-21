@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile - {{ tourist.full_name }} - Hotel Management System{% endblock %}
+
+{% block content %}
+<div class="edit-profile-container">
+    <div class="edit-profile-header">
+        <div class="profile-nav">
+            <a href="{{ url_for('tourist_profile_detail', tourist_id=tourist.id) }}" class="back-btn">← Back to Profile</a>
+        </div>
+        <h2>✏️ Edit Tourist Profile</h2>
+        <p class="edit-subtitle">Update information for {{ tourist.full_name }}</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('edit_tourist_profile', tourist_id=tourist.id) }}" class="edit-profile-form">
+        <div class="form-grid">
+            <!-- Personal Information Section -->
+            <div class="form-section">
+                <h3>👤 Personal Information</h3>
+                
+                <div class="form-group">
+                    <label for="full_name">Full Name *</label>
+                    <input type="text" id="full_name" name="full_name" required 
+                           value="{{ tourist.full_name }}"
+                           placeholder="Enter guest's full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="father_spouse_name">Father/Spouse Name</label>
+                    <input type="text" id="father_spouse_name" name="father_spouse_name" 
+                           value="{{ tourist.father_spouse_name or '' }}"
+                           placeholder="Enter father's or spouse's name">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="age">Age</label>
+                        <input type="number" id="age" name="age" 
+                               value="{{ tourist.age or '' }}"
+                               placeholder="Enter age" min="1" max="120">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="gender">Gender</label>
+                        <select id="gender" name="gender">
+                            <option value="">-- Select Gender --</option>
+                            <option value="Male" {{ 'selected' if tourist.gender == 'Male' else '' }}>Male</option>
+                            <option value="Female" {{ 'selected' if tourist.gender == 'Female' else '' }}>Female</option>
+                            <option value="Other" {{ 'selected' if tourist.gender == 'Other' else '' }}>Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="work">Work/Occupation</label>
+                        <input type="text" id="work" name="work" 
+                               value="{{ tourist.work or '' }}"
+                               placeholder="Enter occupation">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="children_count">Children Count</label>
+                        <input type="number" id="children_count" name="children_count" 
+                               value="{{ tourist.children_count or '' }}"
+                               placeholder="Number of children" min="0" max="20">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">Address *</label>
+                    <textarea id="address" name="address" required rows="3" 
+                              placeholder="Enter complete address">{{ tourist.address }}</textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="area">Area *</label>
+                        <input type="text" id="area" name="area" required 
+                               value="{{ tourist.area }}"
+                               placeholder="Enter area/locality">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pincode">Pincode *</label>
+                        <input type="number" id="pincode" name="pincode" required 
+                               value="{{ tourist.pincode }}"
+                               placeholder="Enter 6-digit pincode" min="100000" max="999999">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Information Section -->
+            <div class="form-section">
+                <h3>📞 Contact Information</h3>
+                
+                <div class="form-group">
+                    <label for="aadhar_number">Aadhar Card Number *</label>
+                    <input type="text" id="aadhar_number" name="aadhar_number" required 
+                           value="{{ tourist.aadhar_number }}"
+                           placeholder="Enter 12-digit Aadhar number" maxlength="12" 
+                           pattern="[0-9]{12}" title="Must be exactly 12 digits">
+                    <small class="field-help">Must be exactly 12 digits</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mobile_number">Mobile Number *</label>
+                    <input type="tel" id="mobile_number" name="mobile_number" required 
+                           value="{{ tourist.mobile_number }}"
+                           placeholder="Enter 10-digit mobile number" maxlength="10" 
+                           pattern="[0-9]{10}" title="Must be exactly 10 digits">
+                    <small class="field-help">Must be exactly 10 digits</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="alternate_mobile">Alternate Mobile Number</label>
+                    <input type="tel" id="alternate_mobile" name="alternate_mobile" 
+                           value="{{ tourist.alternate_mobile or '' }}"
+                           placeholder="Enter 10-digit alternate mobile number" maxlength="10" 
+                           pattern="[0-9]{10}" title="Must be exactly 10 digits">
+                    <small class="field-help">Optional - Must be exactly 10 digits</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required 
+                           value="{{ tourist.email }}"
+                           placeholder="Enter valid email address">
+                </div>
+            </div>
+            
+            <!-- Payment Information Section -->
+            <div class="form-section">
+                <h3>💰 Payment Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="amount_paid_today">Amount Paid Today *</label>
+                        <input type="number" id="amount_paid_today" name="amount_paid_today" required 
+                               value="{{ tourist.amount_paid_today }}"
+                               placeholder="Enter amount paid" min="0" step="0.01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="remaining_amount">Remaining Amount *</label>
+                        <input type="number" id="remaining_amount" name="remaining_amount" required 
+                               value="{{ tourist.remaining_amount }}"
+                               placeholder="Enter remaining amount" min="0" step="0.01">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recipe_number">Recipe Number</label>
+                        <input type="text" id="recipe_number" name="recipe_number" 
+                               value="{{ tourist.recipe_number or '' }}"
+                               placeholder="Enter recipe/receipt number">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="extra_bed">Extra Bed Required</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="extra_bed" value="on" 
+                                       {{ 'checked' if tourist.extra_bed else '' }}>
+                                <span class="checkbox-custom"></span>
+                                Yes, extra bed needed
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Check-Out Information Section -->
+            <div class="form-section">
+                <h3>🚪 Check-Out Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="check_out_date">Expected Check-Out Date</label>
+                        <input type="date" id="check_out_date" name="check_out_date" 
+                               value="{{ tourist.check_out_date or '' }}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="check_out_time">Expected Check-Out Time</label>
+                        <input type="time" id="check_out_time" name="check_out_time" 
+                               value="{{ tourist.check_out_time or '' }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="comments">Comments/Notes</label>
+                    <textarea id="comments" name="comments" rows="3" 
+                              placeholder="Enter any additional comments or special requests">{{ tourist.comments or '' }}</textarea>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <a href="{{ url_for('tourist_profile_detail', tourist_id=tourist.id) }}" class="btn btn-secondary">
+                ❌ Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                ✅ Update Profile
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

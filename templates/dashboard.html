@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Aggarwal Bhawan, Haridwar{% endblock %}
+
+{% block content %}
+<!-- CACHE BUSTER: Version 2025-07-05-TEXT-BUTTONS -->
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+        <h2>🏨 Aggarwal Bhawan Management Dashboard</h2>
+        <p class="welcome-message">Welcome back! Here's your Aggarwal Bhawan status overview.</p>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">🏨</div>
+            <div class="stat-info">
+                <h3>{{ stats.total_rooms }}</h3>
+                <p>Total Rooms</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <h3>{{ stats.checked_in_today }}</h3>
+                <p>Checked In Today</p>
+            </div>
+        </div>
+        <div class="stat-card available">
+            <div class="stat-icon">🔓</div>
+            <div class="stat-info">
+                <h3>{{ stats.available_today }}</h3>
+                <p>Available Rooms</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h3>🚀 Quick Actions</h3>
+        <div class="action-buttons">
+            <a href="{{ url_for('checkin') }}" class="btn btn-primary">
+                ➕ New Check-In
+            </a>
+            <a href="{{ url_for('export_excel') }}" class="btn btn-success">
+                📊 Export Excel Report
+            </a>
+            <a href="{{ url_for('search_tourists_route') }}" class="btn btn-info">
+                🔍 Search & Filter
+            </a>
+            {% if session.latest_receipt %}
+            <a href="{{ url_for('download_receipt') }}" class="btn btn-info">
+                📄 Download Latest Receipt
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Check-ins Table -->
+    <div class="recent-checkins">
+        <h3>📋 Recent Check-ins</h3>
+        {% if stats.recent_checkins %}
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Guest Name</th>
+                        <th>Mobile</th>
+                        <th>ID Number</th>
+                        <th>Amount Paid</th>
+                        <th>Remaining</th>
+                        <th>Check-In Status</th>
+                        <th>Room No.</th>
+                        <th>Date</th>
+                        <th>Receipt</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for checkin in stats.recent_checkins %}
+                    <tr>
+                        <td>{{ checkin[0] }}</td>
+                        <td>{{ checkin[1] }}</td>
+                        <td>{{ checkin[2] }}</td>
+                        <td>₹{{ "%.2f"|format(checkin[3]) }}</td>
+                        <td>₹{{ "%.2f"|format(checkin[4]) }}</td>
+                        <td>
+                            <span class="status-badge {{ 'completed' if checkin[5] else 'pending' }}">
+                                {{ 'Completed' if checkin[5] else 'Pending' }}
+                            </span>
+                        </td>
+                        <td class="room-number">{{ checkin[6] }}</td>
+                        <td>{{ checkin[7] }}</td>
+                        <td>
+                            <span class="receipt-status {{ 'issued' if checkin[8] else 'not-issued' }}">
+                                {{ 'Issued' if checkin[8] else 'Not Issued' }}
+                            </span>
+                        </td>
+                        <td class="action-buttons">
+                            <!-- DEBUG: Template version with TEXT BUTTONS -->
+                            {% if checkin[5] == 1 %}
+                                <!-- COMPLETED CHECK-INS -->
+                                {% if checkin[8] == 1 and checkin[10] %}
+                                    <!-- HAS RECEIPT - SHOW PREVIEW AND DOWNLOAD BUTTONS -->
+                                    <a href="{{ url_for('tourist_profile_detail', tourist_id=checkin[9]) }}" 
+                                       class="btn btn-sm btn-info preview-btn" 
+                                       title="View Tourist Profile">
+                                        Preview
+                                    </a>
+                                    <a href="{{ url_for('download_custom_receipt', tourist_id=checkin[9]) }}" 
+                                       class="btn btn-sm btn-primary download-btn" 
+                                       title="Download Receipt PDF">
+                                        Download
+                                    </a>
+                                {% else %}
+                                    <!-- NO RECEIPT - SHOW GENERATE BUTTON -->
+                                    <form method="POST" action="{{ url_for('generate_receipt', tourist_id=checkin[9]) }}" 
+                                          style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-success generate-btn" 
+                                                title="Generate Receipt">
+                                            Generate
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <!-- PENDING CHECK-INS - DISABLED -->
+                                <span class="btn btn-sm btn-secondary disabled-btn" 
+                                      title="Complete check-in first">
+                                    Disabled
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="no-data">
+            <p>No check-ins recorded yet.</p>
+            <a href="{{ url_for('checkin') }}" class="btn btn-primary">Add First Check-In</a>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Room Status Visualization -->
+    <div class="room-status-section">
+        <h3>🏠 157 Rooms Status Overview</h3>
+        
+        <!-- Room Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🟢</div>
+                <div class="stat-info">
+                    <h3 style="color: #28a745;">{{ stats.available_today }}</h3>
+                    <p>Available</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔴</div>
+                <div class="stat-info">
+                    <h3 style="color: #dc3545;">{{ stats.total_occupied }}</h3>
+                    <p>Occupied</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🟡</div>
+                <div class="stat-info">
+                    <h3 style="color: #ffc107;">{{ stats.pending_checkins }}</h3>
+                    <p>Pending</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏨</div>
+                <div class="stat-info">
+                    <h3 style="color: #007bff;">{{ stats.total_rooms }}</h3>
+                    <p>Total</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Room Status Legend -->
+        <div class="room-legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #28a745; width: 20px; height: 20px; border-radius: 4px; border: 1px solid #dee2e6;"></div>
+                <span>Available</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #dc3545; width: 20px; height: 20px; border-radius: 4px; border: 1px solid #dee2e6;"></div>
+                <span>Occupied</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #ffc107; width: 20px; height: 20px; border-radius: 4px; border: 1px solid #dee2e6;"></div>
+                <span>Pending</span>
+            </div>
+        </div>
+        
+        <!-- Room Grid - All 157 Rooms -->
+        <div class="room-grid" id="roomGrid">
+            <!-- Rooms will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<style>
+/* Room Status Visualization Styles */
+.room-status-section {
+    background: white;
+    border-radius: 10px;
+    padding: 2rem;
+    margin: 2rem 0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.room-legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.room-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.room-item {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    color: white;
+    position: relative;
+}
+
+.room-item:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 10;
+}
+
+.room-item.available {
+    background: linear-gradient(135deg, #28a745, #20c997);
+}
+
+.room-item.occupied {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.room-item.pending {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #333;
+}
+
+@media (max-width: 768px) {
+    .room-legend {
+        gap: 1rem;
+    }
+    
+    .room-grid {
+        grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    }
+    
+    .room-item {
+        width: 40px;
+        height: 40px;
+        font-size: 0.8rem;
+    }
+}
+</style>
+
+<script>
+// ALL JAVASCRIPT DISABLED TO STOP FLICKERING
+console.log('🏨 Aggarwal Bhawan Management Dashboard - JavaScript Disabled');
+console.log('✅ No refresh logic - page should be stable');
+</script>
+{% endblock %}

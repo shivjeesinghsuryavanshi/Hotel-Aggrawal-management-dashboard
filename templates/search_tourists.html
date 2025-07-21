@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+
+{% block title %}Search & Filter - Hotel Management System{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <h2>🔍 Search & Filter Tourists</h2>
+    
+    <!-- Search Form -->
+    <div class="search-form-container">
+        <form method="POST" class="search-form" id="searchForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Guest Name</label>
+                    <input type="text" id="name" name="name" 
+                           value="{{ search_params.name or '' }}" 
+                           placeholder="Enter guest name...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="mobile">Mobile Number</label>
+                    <input type="text" id="mobile" name="mobile" 
+                           value="{{ search_params.mobile or '' }}" 
+                           placeholder="Enter mobile number...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="aadhar">Aadhar Number</label>
+                    <input type="text" id="aadhar" name="aadhar" 
+                           value="{{ search_params.aadhar or '' }}" 
+                           placeholder="Enter aadhar number...">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="receipt_number">Receipt Number</label>
+                    <input type="text" id="receipt_number" name="receipt_number" 
+                           value="{{ search_params.receipt_number or '' }}" 
+                           placeholder="Enter receipt number...">
+                </div>
+                
+                <div class="form-group">
+                    <label for="date">Specific Date</label>
+                    <input type="date" id="date" name="date" 
+                           value="{{ search_params.date or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="receipt_issued">Receipt Status</label>
+                    <select id="receipt_issued" name="receipt_issued">
+                        <option value="">All</option>
+                        <option value="yes" {{ 'selected' if search_params.receipt_issued == 'yes' }}>Receipt Issued</option>
+                        <option value="no" {{ 'selected' if search_params.receipt_issued == 'no' }}>No Receipt</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="date_from">Date From</label>
+                    <input type="date" id="date_from" name="date_from" 
+                           value="{{ search_params.date_from or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="date_to">Date To</label>
+                    <input type="date" id="date_to" name="date_to" 
+                           value="{{ search_params.date_to or '' }}">
+                </div>
+                
+                <div class="form-group form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        🔍 Search
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                        🔄 Clear
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Search Results -->
+    {% if results %}
+    <div class="search-results">
+        <h3>📋 Search Results ({{ results|length }} found)</h3>
+        
+        <div class="results-actions">
+            <button class="btn btn-info" onclick="exportResults()">
+                📊 Export Results
+            </button>
+        </div>
+        
+        <div class="table-container">
+            <table class="data-table" id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Guest Name</th>
+                        <th>Mobile</th>
+                        <th>Aadhar</th>
+                        <th>Email</th>
+                        <th>Room No.</th>
+                        <th>Check-in Date</th>
+                        <th>Amount Paid</th>
+                        <th>Receipt No.</th>
+                        <th>Receipt Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tourist in results %}
+                    <tr>
+                        <td>{{ tourist.full_name }}</td>
+                        <td>{{ tourist.mobile_number }}</td>
+                        <td>{{ tourist.aadhar_number }}</td>
+                        <td>{{ tourist.email }}</td>
+                        <td class="room-number">{{ tourist.room_number }}</td>
+                        <td>{{ tourist.check_in_date }}</td>
+                        <td>₹{{ "%.2f"|format(tourist.amount_paid_today) }}</td>
+                        <td>
+                            {% if tourist.receipt_number %}
+                                <span class="receipt-number">{{ tourist.receipt_number }}</span>
+                            {% else %}
+                                <span class="no-receipt">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="receipt-status {{ 'issued' if tourist.receipt_generated else 'not-issued' }}">
+                                {{ 'Issued' if tourist.receipt_generated else 'Not Issued' }}
+                            </span>
+                        </td>
+                        <td class="action-buttons">
+                            <button class="btn btn-sm btn-info" onclick="viewDetails({{ tourist.id }})" 
+                                    title="View Details">
+                                👁️
+                            </button>
+                            {% if tourist.receipt_generated %}
+                            <a href="{{ url_for('download_custom_receipt', tourist_id=tourist.id) }}" 
+                               class="btn btn-sm btn-success" title="Download Receipt">
+                                📄
+                            </a>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('generate_receipt', tourist_id=tourist.id) }}" 
+                                  style="display: inline;">
+                                <button type="submit" class="btn btn-sm btn-primary" 
+                                        title="Generate Receipt">
+                                    🧾
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% elif request.method == 'POST' %}
+    <div class="no-results">
+        <h3>🔍 No Results Found</h3>
+        <p>No tourists found matching your search criteria. Try adjusting your search parameters.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Tourist Details Modal -->
+<div id="detailsModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3>👤 Tourist Details</h3>
+        <div id="touristDetails">
+            <!-- Details will be loaded here -->
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block styles %}
+<style>
+.search-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.search-form-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.search-form {
+    color: white;
+}
+
+.form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.search-results {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.results-actions {
+    margin-bottom: 20px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.data-table th,
+.data-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.data-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+    color: #495057;
+}
+
+.data-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.receipt-status.issued {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.receipt-status.not-issued {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.receipt-number {
+    font-family: monospace;
+    background: #e9ecef;
+    padding: 2px 6px;
+    border-radius: 3px;
+}
+
+.no-receipt {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-sm {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px;
+    color: #6c757d;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%;
+    max-width: 600px;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #999;
+}
+
+.close:hover {
+    color: #333;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .form-group {
+        min-width: 100%;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function clearForm() {
+    document.getElementById('searchForm').reset();
+}
+
+function exportResults() {
+    // Convert table to CSV and download
+    const table = document.getElementById('resultsTable');
+    let csv = '';
+    
+    // Get headers
+    const headers = table.querySelectorAll('thead th');
+    for (let i = 0; i < headers.length - 1; i++) { // Skip actions column
+        csv += headers[i].textContent + ',';
+    }
+    csv = csv.slice(0, -1) + '\n';
+    
+    // Get data rows
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        for (let i = 0; i < cells.length - 1; i++) { // Skip actions column
+            csv += '"' + cells[i].textContent.replace(/"/g, '""') + '",';
+        }
+        csv = csv.slice(0, -1) + '\n';
+    });
+    
+    // Download CSV
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'search_results.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+async function viewDetails(touristId) {
+    try {
+        const response = await fetch(`/api/tourist_details/${touristId}`);
+        const tourist = await response.json();
+        
+        if (tourist.error) {
+            alert('Error loading tourist details: ' + tourist.error);
+            return;
+        }
+        
+        let detailsHtml = '<div class="tourist-details">';
+        
+        // Always show full name and mobile
+        detailsHtml += `<div class="detail-row"><strong>Full Name:</strong> ${tourist.full_name}</div>`;
+        
+        // Conditionally add other fields
+        if (tourist.father_spouse_name) {
+            detailsHtml += `<div class="detail-row"><strong>Father/Spouse Name:</strong> ${tourist.father_spouse_name}</div>`;
+        }
+        if (tourist.age) {
+            detailsHtml += `<div class="detail-row"><strong>Age:</strong> ${tourist.age}</div>`;
+        }
+        if (tourist.gender) {
+            detailsHtml += `<div class="detail-row"><strong>Gender:</strong> ${tourist.gender}</div>`;
+        }
+        if (tourist.work) {
+            detailsHtml += `<div class="detail-row"><strong>Work:</strong> ${tourist.work}</div>`;
+        }
+        if (tourist.address) {
+            detailsHtml += `<div class="detail-row"><strong>Address:</strong> ${tourist.address}</div>`;
+        }
+        if (tourist.mobile_number) {
+            detailsHtml += `<div class="detail-row"><strong>Mobile:</strong> ${tourist.mobile_number}</div>`;
+        }
+        
+        if (tourist.alternate_mobile) {
+            detailsHtml += `<div class="detail-row"><strong>Alternate Mobile:</strong> ${tourist.alternate_mobile}</div>`;
+        }
+        if (tourist.children_count && tourist.children_count > 0) {
+            detailsHtml += `<div class="detail-row"><strong>Children Count:</strong> ${tourist.children_count}</div>`;
+        }
+        if (tourist.room_number) {
+            detailsHtml += `<div class="detail-row"><strong>Room Number:</strong> ${tourist.room_number}</div>`;
+        }
+        if (tourist.check_in_date) {
+            detailsHtml += `<div class="detail-row"><strong>Check-in Date:</strong> ${tourist.check_in_date}</div>`;
+        }
+        if (tourist.amount_paid_today && parseFloat(tourist.amount_paid_today) > 0) {
+            detailsHtml += `<div class="detail-row"><strong>Amount Paid:</strong> ₹${parseFloat(tourist.amount_paid_today).toFixed(2)}</div>`;
+        }
+        if (tourist.remaining_amount && parseFloat(tourist.remaining_amount) > 0) {
+            detailsHtml += `<div class="detail-row"><strong>Remaining Amount:</strong> ₹${parseFloat(tourist.remaining_amount).toFixed(2)}</div>`;
+        }
+        if (tourist.receipt_number) {
+            detailsHtml += `<div class="detail-row"><strong>Receipt Number:</strong> ${tourist.receipt_number}</div>`;
+        }
+        
+        detailsHtml += `<div class="detail-row"><strong>Receipt Status:</strong> ${tourist.receipt_generated ? 'Generated' : 'Not generated'}</div>`;
+        
+        if (tourist.extra_bed) {
+            detailsHtml += '<div class="detail-row"><strong>Extra Bed:</strong> Yes</div>';
+        }
+        if (tourist.comments) {
+            detailsHtml += `<div class="detail-row"><strong>Comments:</strong> ${tourist.comments}</div>`;
+        }
+        
+        detailsHtml += '</div>';
+        
+        document.getElementById('touristDetails').innerHTML = detailsHtml;
+        document.getElementById('detailsModal').style.display = 'block';
+        
+    } catch (error) {
+        alert('Error loading tourist details: ' + error.message);
+    }
+}
+
+function closeModal() {
+    document.getElementById('detailsModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('detailsModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}
